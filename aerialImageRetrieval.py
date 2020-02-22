@@ -111,7 +111,7 @@ class AerialImageRetrieval(object):
                 return
 
             if abs(pixelX1 - pixelX2) * abs(pixelY1 - pixelY2) > IMAGEMAXSIZE:
-                print("Current level {} results an image exceeding the maximum image size (8192 * 8192), will SKIP".format(levl))
+                print("Current level {} results an image exceeding the maximum image size {}, will SKIP".format(levl,IMAGEMAXSIZE))
                 continue
             
             tileX1, tileY1 = TileSystem.pixelXY_to_tileXY(pixelX1, pixelY1)
