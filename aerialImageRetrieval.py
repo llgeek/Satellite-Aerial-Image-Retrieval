@@ -15,6 +15,8 @@ Return an aerial imagery (with maximum resolution available) downloaded from Bin
 import sys, io, os
 from urllib import request
 from PIL import Image
+import time
+from datetime import timedelta
 
 from tilesystem import TileSystem
 
@@ -111,7 +113,7 @@ class AerialImageRetrieval(object):
                 return
 
             if abs(pixelX1 - pixelX2) * abs(pixelY1 - pixelY2) > IMAGEMAXSIZE:
-                print("Current level {} results an image exceeding the maximum image size (8192 * 8192), will SKIP".format(levl))
+                print("Current level {} results an image exceeding the maximum image size {}, will SKIP".format(levl,IMAGEMAXSIZE))
                 continue
             
             tileX1, tileY1 = TileSystem.pixelXY_to_tileXY(pixelX1, pixelY1)
@@ -120,11 +122,29 @@ class AerialImageRetrieval(object):
             # Stitch the tile images together
             result = Image.new('RGB', ((tileX2 - tileX1 + 1) * TILESIZE, (tileY2 - tileY1 + 1) * TILESIZE))
             retrieve_sucess = False
+            # initialize a initial timestap for remaining time estimation
+            old_ts = time.time()
+            avg_download_time = None
             for tileY in range(tileY1, tileY2 + 1):
                 retrieve_sucess, horizontal_image = self.horizontal_retrieval_and_stitch_image(tileX1, tileX2, tileY, levl)
                 if not retrieve_sucess:
                     break
                 result.paste(horizontal_image, (0, (tileY - tileY1) * TILESIZE))
+                ts = time.time()
+                timespan = ts-old_ts
+                local_prevision = timespan * (tileY2-tileY)
+                # if it's not the first cycle
+                if (avg_download_time):
+                    # make and average between past averages and a prediction made on last download time
+                    historical_prevision = avg_download_time-timespan
+                    avg_download_time = (local_prevision+historical_prevision)/2
+                else:
+                    # if it's the first cycle just use a prediction made on last download time
+                    avg_download_time = local_prevision
+                # remove microseconds from print
+                string_remaining_time = str(timedelta(seconds=avg_download_time)).split(".",1)[0]
+                print("Remaining time "+string_remaining_time)
+                old_ts = ts
 
             if not retrieve_sucess:
                 continue
