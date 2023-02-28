@@ -1,3 +1,12 @@
+"""
+__author__ = Leon Debnath
+__email__ = leon_debnath@hotmail.co.uk
+
+@Description: This module allows for coordinate shifting by arbitrary meter distances and creation of bounding boxes
+around decimal degree coordinates. **Note**: these calculations are only approximations, for accurate distance
+measurements and projections use a library like GDAL.
+"""
+
 from math import pi, cos
 
 
