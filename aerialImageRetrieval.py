@@ -19,6 +19,7 @@ import time
 from datetime import timedelta
 
 from tilesystem import TileSystem
+from radialProjection import bounding_box
 
 
 BASEURL = "http://h0.ortho.tiles.virtualearth.net/tiles/h{0}.jpeg?g=131"
@@ -189,7 +190,6 @@ class AerialImageRetrieval(object):
         for i, image in enumerate(imagelist):
             result.paste(image, (i * TILESIZE, 0))
         return True, result
-        
 
 
 def main():
@@ -202,14 +202,23 @@ def main():
         args = sys.argv[1:]
     except IndexError:
         sys.exit('Diagonal (Latitude, Longitude) coordinates of the bounding box must be input')
-    if len(args) != 4:
-        sys.exit('Please input Latitude, Longitude coordinates for both upper-left and lower-right corners!')
-    
-    try:
-        lat1, lon1, lat2, lon2 = float(args[0]), float(args[1]), float(args[2]), float(args[3])
-    except ValueError:
-        sys.exit('Latitude and longitude must be float type')
-    
+
+    if len(args) == 4:
+        try:
+            lat1, lon1, lat2, lon2 = float(args[0]), float(args[1]), float(args[2]), float(args[3])
+        except ValueError:
+            sys.exit('Latitude and longitude must be float type')
+
+    elif len(args) == 5 and args[0] == '-b':
+        try:
+            lat, lon, width, height = float(args[1]), float(args[2]), float(args[3]), float(args[4])
+            lat1, lon1, lat2, lon2 = bounding_box(lat, lon, width, height)
+        except ValueError:
+            sys.exit('Latitude, longitude, width and height must be float type')
+
+    else:
+        sys.exit('Please input Latitude, Longitude coordinates for both upper-left and lower-right corners!\n -OR- \n'
+                 'specify a point and box with -b lon lat width height')
 
     # Retrieve the aerial image
     imgretrieval = AerialImageRetrieval(lat1, lon1, lat2, lon2)
