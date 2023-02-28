@@ -13,7 +13,7 @@ Please make sure the following environment is configured:
 To run the script, simply input the following commands in Terminal:
 
 ```bash
-python3 ProbeMapMatching.py lat1, lon1, lat2, lon2,
+python3 aerialImageRetrieval.py lat1, lon1, lat2, lon2,
 ```
 
 where (lat1, lon1) is the latitude and longitude of the upper-left coordinate, and (lat2, lon2) is the latitude and longitude of the lower-right coordinate. 
