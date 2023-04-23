@@ -1,5 +1,5 @@
 """
-__author__ = Linlin Chen
+__author_ = Linlin Chen
 __email__ = lchen96@hawk.iit.edu
 
 
@@ -11,7 +11,6 @@ Return an aerial imagery (with maximum resolution available) downloaded from Bin
 
 """
 
-
 import sys, io, os
 from urllib import request
 from PIL import Image
@@ -21,10 +20,9 @@ from datetime import timedelta
 from tilesystem import TileSystem
 from radialProjection import bounding_box
 
-
 BASEURL = "http://h0.ortho.tiles.virtualearth.net/tiles/h{0}.jpeg?g=131"
-IMAGEMAXSIZE = 8192 * 8192 * 8 # max width/height in pixels for the retrived image
-TILESIZE = 256              # in Bing tile system, one tile image is in size 256 * 256 pixels
+IMAGEMAXSIZE = 8192 * 8192 * 8  # max width/height in pixels for the retrived image
+TILESIZE = 256  # in Bing tile system, one tile image is in size 256 * 256 pixels
 
 
 class AerialImageRetrieval(object):
@@ -33,20 +31,20 @@ class AerialImageRetrieval(object):
     To create an AerialImageRetrieval object, simply give upper left latitude, longitude,
     and lower right latitude and longitude
     """
-    def __init__(self, lat1, lon1, lat2, lon2):
+
+    def __init__(self, lat1, lon1, lat2, lon2, name="aerialImage", tgtfolder="./output/"):
         self.lat1 = lat1
         self.lon1 = lon1
         self.lat2 = lat2
         self.lon2 = lon2
-
-        self.tgtfolder = './output/'
+        self.name = name
+        self.tgtfolder = tgtfolder
         try:
             os.makedirs(self.tgtfolder)
         except FileExistsError:
             pass
         except OSError:
             raise
-        
 
     def download_image(self, quadkey):
         """This method is used to download a tile image given the quadkey from Bing tile system
@@ -60,8 +58,6 @@ class AerialImageRetrieval(object):
 
         with request.urlopen(BASEURL.format(quadkey)) as file:
             return Image.open(file)
-
-
 
     def is_valid_image(self, image):
         """Check whether the downloaded image is valid, 
@@ -77,11 +73,10 @@ class AerialImageRetrieval(object):
         """
 
         if not os.path.exists('null.png'):
-            nullimg = self.download_image('11111111111111111111')      # an invalid quadkey which will download a null jpeg from Bing tile system
+            nullimg = self.download_image(
+                '11111111111111111111')  # an invalid quadkey which will download a null jpeg from Bing tile system
             nullimg.save('./null.png')
         return not (image == Image.open('./null.png'))
-
-
 
     def max_resolution_imagery_retrieval(self):
         """The main aerial retrieval method
@@ -106,17 +101,17 @@ class AerialImageRetrieval(object):
             pixelX1, pixelX2 = min(pixelX1, pixelX2), max(pixelX1, pixelX2)
             pixelY1, pixelY2 = min(pixelY1, pixelY2), max(pixelY1, pixelY2)
 
-            
-            #Bounding box's two coordinates coincide at the same pixel, which is invalid for an aerial image.
-            #Raise error and directly return without retriving any valid image.
+            # Bounding box's two coordinates coincide at the same pixel, which is invalid for an aerial image.
+            # Raise error and directly return without retriving any valid image.
             if abs(pixelX1 - pixelX2) <= 1 or abs(pixelY1 - pixelY2) <= 1:
                 print("Cannot find a valid aerial imagery for the given bounding box!")
                 return
 
             if abs(pixelX1 - pixelX2) * abs(pixelY1 - pixelY2) > IMAGEMAXSIZE:
-                print("Current level {} results an image exceeding the maximum image size {}, will SKIP".format(levl,IMAGEMAXSIZE))
+                print("Current level {} results an image exceeding the maximum image size {}, will SKIP".format(levl,
+                                                                                                                IMAGEMAXSIZE))
                 continue
-            
+
             tileX1, tileY1 = TileSystem.pixelXY_to_tileXY(pixelX1, pixelY1)
             tileX2, tileY2 = TileSystem.pixelXY_to_tileXY(pixelX2, pixelY2)
 
@@ -127,24 +122,25 @@ class AerialImageRetrieval(object):
             old_ts = time.time()
             avg_download_time = None
             for tileY in range(tileY1, tileY2 + 1):
-                retrieve_sucess, horizontal_image = self.horizontal_retrieval_and_stitch_image(tileX1, tileX2, tileY, levl)
+                retrieve_sucess, horizontal_image = self.horizontal_retrieval_and_stitch_image(tileX1, tileX2, tileY,
+                                                                                               levl)
                 if not retrieve_sucess:
                     break
                 result.paste(horizontal_image, (0, (tileY - tileY1) * TILESIZE))
                 ts = time.time()
-                timespan = ts-old_ts
-                local_prevision = timespan * (tileY2-tileY)
+                timespan = ts - old_ts
+                local_prevision = timespan * (tileY2 - tileY)
                 # if it's not the first cycle
                 if (avg_download_time):
                     # make and average between past averages and a prediction made on last download time
-                    historical_prevision = avg_download_time-timespan
-                    avg_download_time = (local_prevision+historical_prevision)/2
+                    historical_prevision = avg_download_time - timespan
+                    avg_download_time = (local_prevision + historical_prevision) / 2
                 else:
                     # if it's the first cycle just use a prediction made on last download time
                     avg_download_time = local_prevision
                 # remove microseconds from print
-                string_remaining_time = str(timedelta(seconds=avg_download_time)).split(".",1)[0]
-                print("Remaining time "+string_remaining_time)
+                string_remaining_time = str(timedelta(seconds=avg_download_time)).split(".", 1)[0]
+                print("Remaining time " + string_remaining_time)
                 old_ts = ts
 
             if not retrieve_sucess:
@@ -153,14 +149,13 @@ class AerialImageRetrieval(object):
             # Crop the image based on the given bounding box
             leftup_cornerX, leftup_cornerY = TileSystem.tileXY_to_pixelXY(tileX1, tileY1)
             retrieve_image = result.crop((pixelX1 - leftup_cornerX, pixelY1 - leftup_cornerY, \
-                                        pixelX2 - leftup_cornerX, pixelY2 - leftup_cornerY))
-            print("Finish the aerial image retrieval, store the image aerialImage_{0}.jpeg in folder {1}".format(levl, self.tgtfolder))
-            filename = os.path.join(self.tgtfolder, 'aerialImage_{}.jpeg'.format(levl))
+                                          pixelX2 - leftup_cornerX, pixelY2 - leftup_cornerY))
+            print(f"Finish the aerial image retrieval, store the image aerialImage_{levl}.jpeg in folder "
+                  f"{self.tgtfolder}")
+            filename = os.path.join(self.tgtfolder, f'{self.name}_{levl}.jpeg')
             retrieve_image.save(filename)
             return True
-        return False    
-            
-
+        return False
 
     def horizontal_retrieval_and_stitch_image(self, tileX_start, tileX_end, tileY, level):
         """Horizontally retrieve tile images and then stitch them together,
@@ -183,7 +178,7 @@ class AerialImageRetrieval(object):
             if self.is_valid_image(image):
                 imagelist.append(image)
             else:
-                #print(quadkey)
+                # print(quadkey)
                 print("Cannot find tile image at level {0} for tile coordinate ({1}, {2})".format(level, tileX, tileY))
                 return False, None
         result = Image.new('RGB', (len(imagelist) * TILESIZE, TILESIZE))
@@ -192,42 +187,43 @@ class AerialImageRetrieval(object):
         return True, result
 
 
-def main():
-    """The main entrance.
-    Decode the upper left and lower right coordinates, and retrieve the aerial image withing that bounding box  
-    """
-
-    # decode the bounding box coordinates
+def retrieve(name: str, lat: float, lon: float, width: float = 500, height: float = 500):
     try:
-        args = sys.argv[1:]
-    except IndexError:
-        sys.exit('Diagonal (Latitude, Longitude) coordinates of the bounding box must be input')
-
-    if len(args) == 4:
-        try:
-            lat1, lon1, lat2, lon2 = float(args[0]), float(args[1]), float(args[2]), float(args[3])
-        except ValueError:
-            sys.exit('Latitude and longitude must be float type')
-
-    elif len(args) == 5 and args[0] == '-b':
-        try:
-            lat, lon, width, height = float(args[1]), float(args[2]), float(args[3]), float(args[4])
-            lat1, lon1, lat2, lon2 = bounding_box(lat, lon, width, height)
-        except ValueError:
-            sys.exit('Latitude, longitude, width and height must be float type')
-
-    else:
-        sys.exit('Please input Latitude, Longitude coordinates for both upper-left and lower-right corners!\n -OR- \n'
-                 'specify a point and box with -b lon lat width height')
+        lat1, lon1, lat2, lon2 = bounding_box(lat, lon, width, height)
+    except ValueError:
+        sys.exit('Latitude, longitude, width and height must be float type')
 
     # Retrieve the aerial image
-    imgretrieval = AerialImageRetrieval(lat1, lon1, lat2, lon2)
-    if imgretrieval.max_resolution_imagery_retrieval():
+    sat_img = AerialImageRetrieval(lat1, lon1, lat2, lon2, name=name)
+    if sat_img.max_resolution_imagery_retrieval():
         print("Successfully retrieve the image with maximum resolution!")
     else:
         print("Cannot retrieve the desired image! (Possible reason: expected tile image does not exist.)")
 
 
-if __name__ == '__main__':
-    main()
+def run(dir: str):
+    data = []
 
+    with open(dir, "r") as file:
+        lines = file.readlines()
+
+    for line in lines:
+        print(line)
+        l = line.split(',')
+        id = l[0][1:-1]
+        lat = l[1][1:-1]
+        lon = l[2][1:-1]
+        data.append((id, lat, lon))
+
+    for line in data:
+        print(line)
+        img_id = line[0]
+        lat = float(line[1])
+        lon = float(line[2])
+        print(lat)
+        print(type(lat))
+        retrieve(img_id, lat, lon)
+
+
+if __name__ == '__main__':
+    run("images_subset.csv")
