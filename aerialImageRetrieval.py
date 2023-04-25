@@ -202,28 +202,45 @@ def retrieve(name: str, lat: float, lon: float, width: float = 500, height: floa
 
 
 def run(dir: str):
-    data = []
 
+    seen = set()
+    if os.path.isdir("output"):
+        downloaded_files = os.listdir('output')
+        for f in downloaded_files:
+            l = f.split("_")
+            seen.add(l[0])
+
+    pos = set()
+    with open('pos_images.txt', 'r') as file:
+        lines = file.readlines()
+        for line in lines:
+            parts = line.split('.')
+            if parts[0] not in seen:
+                pos.add(parts[0])
+    print(len(pos))
+
+    data = []
     with open(dir, "r") as file:
         lines = file.readlines()
 
     for line in lines:
-        print(line)
         l = line.split(',')
         id = l[0][1:-1]
         lat = l[1][1:-1]
         lon = l[2][1:-1]
-        data.append((id, lat, lon))
 
-    for line in data:
+        if id in pos:
+            data.append((id, lat, lon))
+
+    total = len(data)
+
+    for i, line in enumerate(data):
         print(line)
         img_id = line[0]
         lat = float(line[1])
         lon = float(line[2])
-        print(lat)
-        print(type(lat))
         retrieve(img_id, lat, lon)
-
+        print(f"{i}/{total} - {(i/total) * 100}%")
 
 if __name__ == '__main__':
-    run("images_subset.csv")
+    run("images.csv")
