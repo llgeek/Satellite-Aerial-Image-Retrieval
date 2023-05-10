@@ -13,14 +13,22 @@ Please make sure the following environment is configured:
 To run the script, simply input the following commands in Terminal:
 
 ```bash
-python3 ProbeMapMatching.py lat1, lon1, lat2, lon2,
+python3 aerialImageRetrieval.py lat1, lon1, lat2, lon2,
 ```
 
 where (lat1, lon1) is the latitude and longitude of the upper-left coordinate, and (lat2, lon2) is the latitude and longitude of the lower-right coordinate. 
 
 In my code, my program tolerates arbitrary coordinates input, as long as the two coordinates are diagonal. My program will figure out to transform the input coordinates to the standardized one before processing.
 
+##### Single Coordinate Location Image
+To retrieve an image of a set width/height of meters centered at a location use the `-b` tag to specify a bounding box size:
+```bash
+python3 aerialImageRetrieval.py -b lat, lon, width, height
+```
+where `width` and `height` are approximated distances +/- 1 degree.
 
+
+##### Output
 The retrieved image will be stored in `.\output` folder. The name of the image will follow the 'aerialImage_{}.jpeg' ending with the retrieval level. 
 
 Some sample retrievals could be:
